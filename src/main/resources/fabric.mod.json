@@ -3,15 +3,15 @@
 	"id": "projectileimmunityfix",
 	"version": "${version}",
 	"name": "ProjectileImmunityFix",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "Allows multiple projectiles to hit at the same time but balanced!",
 	"authors": [
-		"Me!"
+		"KevzCz"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://www.curseforge.com/minecraft/mc-mods/kevs-projectile-immunity-fix",
+		"sources": "https://github.com/KevzCz/ProjectileImmunityFix"
 	},
-	"license": "CC0-1.0",
+	"license": "MIT",
 	"icon": "assets/projectileimmunityfix/icon.png",
 	"environment": "*",
 	"entrypoints": {
@@ -27,8 +27,5 @@
 		"minecraft": "~1.21.1",
 		"java": ">=21",
 		"fabric-api": "*"
-	},
-	"suggests": {
-		"another-mod": "*"
 	}
 }
