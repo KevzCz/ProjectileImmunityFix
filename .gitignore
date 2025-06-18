@@ -1,0 +1,18 @@
+# Gradle
+.gradle/
+build/
+out/
+
+# IntelliJ
+.idea/
+*.iml
+
+# Minecraft-related
+run/
+logs/
+*.log
+*.jar
+*.bak
+
+# VSCode
+.vscode/

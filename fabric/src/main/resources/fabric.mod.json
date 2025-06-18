@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "projectileimmunityfix",
+  "version": "{version}",
+  "name": "ProjectileImmunityFix",
+  "description": "Allows multiple projectiles to hit at the same time but balanced!",
+  "authors": [
+    "KevzCz"
+  ],
+  "contact": {
+    "homepage": "https://www.curseforge.com/minecraft/mc-mods/kevs-projectile-immunity-fix",
+    "sources": "https://github.com/KevzCz/ProjectileImmunityFix"
+  },
+  "license": "MIT",
+  "icon": "assets/kevs_projectile_immunity_fix/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "net.pixeldreamstudios.projectileimmunityfix.fabric.ProjectileImmunityFixFabric"
+    ]
+  },
+  "mixins": [
+    "kevs_projectile_immunity_fix.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.14",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "architectury": ">=13.0.8"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
+}
