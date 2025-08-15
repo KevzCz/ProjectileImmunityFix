@@ -17,19 +17,21 @@ public class ProjectileImmunityFixConfig {
 
     public static ProjectileImmunityFixConfig INSTANCE = new ProjectileImmunityFixConfig();
 
-    public MobProjectileConfig mobConfig = new MobProjectileConfig(true, 10, 20, 20);
-    public PlayerProjectileConfig playerConfig = new PlayerProjectileConfig(false, 6, 40, 40); // Disabled by default
+    public ProjectileMobConfig projectileMobConfig   = new ProjectileMobConfig(true, 10, 20, 20);
+    public ProjectilePlayerConfig projectilePlayerConfig = new ProjectilePlayerConfig(false, 6, 40, 40);
 
-    // 🔁 Shared base class for common fields
-    public static class BaseProjectileConfig {
+    public MeleeMobConfig meleeMobConfig             = new MeleeMobConfig(false, 10, 20, 20);
+    public MeleePlayerConfig meleePlayerConfig       = new MeleePlayerConfig(false, 6, 40, 40);
+
+    public static class BaseStackingIFrameConfig {
         public boolean enabled;
         public int maxHitsBeforeCooldown;
         public int cooldownTicks;
         public int timeWithoutHitResetTicks;
 
-        public BaseProjectileConfig() {}
+        public BaseStackingIFrameConfig() {}
 
-        public BaseProjectileConfig(boolean enabled, int maxHitsBeforeCooldown, int cooldownTicks, int timeWithoutHitResetTicks) {
+        public BaseStackingIFrameConfig(boolean enabled, int maxHitsBeforeCooldown, int cooldownTicks, int timeWithoutHitResetTicks) {
             this.enabled = enabled;
             this.maxHitsBeforeCooldown = maxHitsBeforeCooldown;
             this.cooldownTicks = cooldownTicks;
@@ -37,47 +39,54 @@ public class ProjectileImmunityFixConfig {
         }
     }
 
-    // 👤 Player config: no entity-specific overrides
-    public static class PlayerProjectileConfig extends BaseProjectileConfig {
-        public PlayerProjectileConfig() {}
-
-        public PlayerProjectileConfig(boolean enabled, int maxHitsBeforeCooldown, int cooldownTicks, int timeWithoutHitResetTicks) {
+    public static class ProjectilePlayerConfig extends BaseStackingIFrameConfig {
+        public ProjectilePlayerConfig() {}
+        public ProjectilePlayerConfig(boolean enabled, int maxHitsBeforeCooldown, int cooldownTicks, int timeWithoutHitResetTicks) {
             super(enabled, maxHitsBeforeCooldown, cooldownTicks, timeWithoutHitResetTicks);
         }
     }
 
-    // 🧟 Mob config: supports per-entity overrides
-    public static class MobProjectileConfig extends BaseProjectileConfig {
+    public static class ProjectileMobConfig extends BaseStackingIFrameConfig {
         public List<PerEntityOverride> entities = new ArrayList<>();
-
-        public MobProjectileConfig() {}
-
-        public MobProjectileConfig(boolean enabled, int maxHitsBeforeCooldown, int cooldownTicks, int timeWithoutHitResetTicks) {
+        public ProjectileMobConfig() {}
+        public ProjectileMobConfig(boolean enabled, int maxHitsBeforeCooldown, int cooldownTicks, int timeWithoutHitResetTicks) {
             super(enabled, maxHitsBeforeCooldown, cooldownTicks, timeWithoutHitResetTicks);
-        }
-
-        public static class PerEntityOverride {
-            public String mobId;
-            public int maxHitsBeforeCooldown;
-            public int cooldownTicks;
-            public int timeWithoutHitResetTicks;
-
-            public PerEntityOverride() {}
         }
     }
 
-    // 🧠 Picks correct config: player, mob, or specific override
-    public BaseProjectileConfig getEffectiveConfig(Entity entity) {
-        if (entity instanceof PlayerEntity) {
-            return playerConfig.enabled ? playerConfig : null;
+    public static class MeleePlayerConfig extends BaseStackingIFrameConfig {
+        public MeleePlayerConfig() {}
+        public MeleePlayerConfig(boolean enabled, int maxHitsBeforeCooldown, int cooldownTicks, int timeWithoutHitResetTicks) {
+            super(enabled, maxHitsBeforeCooldown, cooldownTicks, timeWithoutHitResetTicks);
         }
+    }
 
-        if (!mobConfig.enabled) return null;
+    public static class MeleeMobConfig extends BaseStackingIFrameConfig {
+        public List<PerEntityOverride> entities = new ArrayList<>();
+        public MeleeMobConfig() {}
+        public MeleeMobConfig(boolean enabled, int maxHitsBeforeCooldown, int cooldownTicks, int timeWithoutHitResetTicks) {
+            super(enabled, maxHitsBeforeCooldown, cooldownTicks, timeWithoutHitResetTicks);
+        }
+    }
+
+    public static class PerEntityOverride {
+        public String mobId;
+        public int maxHitsBeforeCooldown;
+        public int cooldownTicks;
+        public int timeWithoutHitResetTicks;
+        public PerEntityOverride() {}
+    }
+
+    public BaseStackingIFrameConfig getEffectiveProjectileConfig(Entity entity) {
+        if (entity instanceof PlayerEntity) {
+            return projectilePlayerConfig.enabled ? projectilePlayerConfig : null;
+        }
+        if (!projectileMobConfig.enabled) return null;
 
         String id = EntityType.getId(entity.getType()).toString();
-        for (MobProjectileConfig.PerEntityOverride override : mobConfig.entities) {
+        for (PerEntityOverride override : projectileMobConfig.entities) {
             if (override.mobId.equals(id)) {
-                return new MobProjectileConfig(
+                return new BaseStackingIFrameConfig(
                         true,
                         override.maxHitsBeforeCooldown,
                         override.cooldownTicks,
@@ -85,8 +94,27 @@ public class ProjectileImmunityFixConfig {
                 );
             }
         }
+        return projectileMobConfig;
+    }
 
-        return mobConfig;
+    public BaseStackingIFrameConfig getEffectiveMeleeConfig(Entity entity) {
+        if (entity instanceof PlayerEntity) {
+            return meleePlayerConfig.enabled ? meleePlayerConfig : null;
+        }
+        if (!meleeMobConfig.enabled) return null;
+
+        String id = EntityType.getId(entity.getType()).toString();
+        for (PerEntityOverride override : meleeMobConfig.entities) {
+            if (override.mobId.equals(id)) {
+                return new BaseStackingIFrameConfig(
+                        true,
+                        override.maxHitsBeforeCooldown,
+                        override.cooldownTicks,
+                        override.timeWithoutHitResetTicks
+                );
+            }
+        }
+        return meleeMobConfig;
     }
 
     public static void load(Path configDir) {
@@ -97,15 +125,29 @@ public class ProjectileImmunityFixConfig {
             try (FileReader reader = new FileReader(configFile)) {
                 JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
 
-                if (json.has("mobConfig")) {
-                    INSTANCE.mobConfig = GSON.fromJson(json.get("mobConfig"), MobProjectileConfig.class);
+                if (json.has("projectileMobConfig")) {
+                    INSTANCE.projectileMobConfig = GSON.fromJson(json.get("projectileMobConfig"), ProjectileMobConfig.class);
+                }
+                if (json.has("projectilePlayerConfig")) {
+                    INSTANCE.projectilePlayerConfig = GSON.fromJson(json.get("projectilePlayerConfig"), ProjectilePlayerConfig.class);
+                }
+                if (json.has("meleeMobConfig")) {
+                    INSTANCE.meleeMobConfig = GSON.fromJson(json.get("meleeMobConfig"), MeleeMobConfig.class);
+                }
+                if (json.has("meleePlayerConfig")) {
+                    INSTANCE.meleePlayerConfig = GSON.fromJson(json.get("meleePlayerConfig"), MeleePlayerConfig.class);
                 }
 
-                if (json.has("playerConfig")) {
-                    INSTANCE.playerConfig = GSON.fromJson(json.get("playerConfig"), PlayerProjectileConfig.class);
+                if (json.has("mobConfig") || json.has("playerConfig")) {
+                    if (json.has("mobConfig") && !json.has("projectileMobConfig")) {
+                        INSTANCE.projectileMobConfig = GSON.fromJson(json.get("mobConfig"), ProjectileMobConfig.class);
+                    }
+                    if (json.has("playerConfig") && !json.has("projectilePlayerConfig")) {
+                        INSTANCE.projectilePlayerConfig = GSON.fromJson(json.get("playerConfig"), ProjectilePlayerConfig.class);
+                    }
                 }
 
-                save(); // Rewrite to ensure all fields exist
+                save();
             } catch (IOException e) {
                 ProjectileImmunityFix.LOGGER.error("Error reading config file", e);
             }
